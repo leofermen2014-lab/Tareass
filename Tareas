@@ -1,0 +1,129 @@
+import sounddevice as sd
+import numpy as np
+import scipy.io.wavfile as wav
+import speech_recognition as sr
+import time
+import random
+
+# -----------------------------
+# 🎨 ZONA DE CREATIVIDAD (puedes cambiar mensajes, colores, sonidos, etc.)
+mensajes_inicio = [
+    "Prepárate, vas a escuchar una palabra y tendrás que decirla en inglés. No en otro idioma ni me digas bobadas porque si no…",
+    "Atento, diré una palabra y tú la traduces en inglés. Inglés vale, no español o alemán… ¡Ingleeeees!",
+    "Juego de pronunciación: escucha y repite en inglés. ¿Entendido? Pues si no, léelo otra vez y no me importa."
+]
+
+mensaje_correcto = "Muy bien hecho, sigue así (:"   # ✔️ Puedes cambiarlo
+mensaje_incorrecto = "O no sigues bien como te dije o eres muy malo ):"   # ❌ Puedes cambiarlo
+
+# Palabras por nivel
+palabras_por_nivel = {
+    "facil": {
+        "gato": "cat",
+        "perro": "dog",
+        "sol": "sun",
+        "leche": "milk",
+        "pan": "bread"
+    },
+    "medio": {
+        "ventana": "window",
+        "amarillo": "yellow",
+        "escuela": "school",
+        "amigo": "friend",
+        "banano": "banana"
+    },
+    "dificil": {
+        "tecnologia": "technology",
+        "universidad": "university",
+        "informacion": "information",
+        "pronunciacion": "pronunciation",
+        "imaginacion": "imagination"
+    }
+}
+# -----------------------------
+
+print(random.choice(mensajes_inicio))
+time.sleep(2)
+
+# Preguntar dificultad
+print("Elige dificultad (elige la medio si eres valiente): facil / medio / dificil")
+nivel = input("Dificultad: ").lower().strip()
+
+if nivel not in palabras_por_nivel:
+    print("Nivel no válido, usaré 'facil'. ¿Sabes por qué? Porque si me escribes bobadas no se puede así.")
+    nivel = "facil"
+
+print(f"Has elegido nivel: {nivel}")
+print("Mira como te hayas puesto el fácil y pierdas… Si te pones el difícil eres un pro.")
+
+print("Tienes 5 segundos para prepararte… 5 segundos, no espero más, no hay botón de pausa.")
+print("Ya empiezaaaaaaa")
+time.sleep(5)
+
+# -----------------------------
+# 🔥 SISTEMA DE 10 PREGUNTAS + VIDAS + NOTA
+# -----------------------------
+puntos = 0
+total_preguntas = 10
+
+for pregunta in range(1, total_preguntas + 1):
+
+    print(f"\nPregunta {pregunta} de {total_preguntas}")
+
+    palabras = palabras_por_nivel[nivel]
+    palabra_es = random.choice(list(palabras.keys()))
+    palabra_en = palabras[palabra_es]
+
+    print(f"La palabra es: {palabra_es}")
+    time.sleep(1)
+
+    intentos = 3  # vidas por pregunta
+
+    while intentos > 0:
+        print("Habla ahora… Por favor. Y si no quieres pues no lo hagas, nadie te obliga (: ")
+
+        duration = 3
+        sample_rate = 44100
+
+        recording = sd.rec(int(duration * sample_rate), samplerate=sample_rate, channels=1, dtype="int16")
+        sd.wait()
+
+        wav.write("respuesta.wav", sample_rate, recording)
+
+        recognizer = sr.Recognizer()
+        with sr.AudioFile("respuesta.wav") as source:
+            audio = recognizer.record(source)
+
+        try:
+            texto = recognizer.recognize_google(audio, language="en")
+            print("Dijiste:", texto)
+
+            if texto.lower().strip() == palabra_en:
+                print(mensaje_correcto)
+                puntos += 1
+                break
+            else:
+                intentos -= 1
+                print(mensaje_incorrecto, f"Te quedan {intentos} intentos. Queda poco, esfuérzate más.")
+
+        except:
+            intentos -= 1
+            print(mensaje_incorrecto, f"Te quedan {intentos} intentos. Venga, gana mi bro.")
+
+        if intentos == 0:
+            print("Has fallado 3 veces. Has perdido, vuelve a intentarlo. Mira cómo puedes fallar a este juego bro :(")
+            exit()
+
+# -----------------------------
+# 🧮 NOTA FINAL
+# -----------------------------
+print("\n--- RESULTADO FINAL ---")
+print(f"Has acertado {puntos} de {total_preguntas} preguntas.")
+
+nota = (puntos / total_preguntas) * 10
+print(f"Tu nota es: {nota:.1f}")
+
+if nota < 5:
+    print("❌ Has suspendido. Te toca hacer la repesca. Vamos a por todas, venga vuelve, solo es una nota (:")
+else:
+    print("✔️ ¡Aprobaste! Buen trabajo. Mira, no te chules de los que suspenden que tú algún día suspendiste (:")
